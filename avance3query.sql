@@ -1,0 +1,1066 @@
+﻿
+USE master
+GO
+
+GRANT CREATE TABLE TO gustavo_ad
+GO
+
+CREATE USER gustavo_ad FOR LOGIN gustavo_ad --MY USER USED TO BE AND ORPHANED USER BECAUSE EVEN THOUGH IT HAD A LOGIN, THERE WAS NO ACCOUNT REGISTERED ON THE MASTER DATABASE
+GO                                          --THIS IS NEEDED IN ORDER TO GRANT PERMISSIONS
+
+EXEC sp_addrolemember N'db_datareader', N'gustavo_ad'--ALL OF THESE ONLY GRANTED PERMISSON TO MASTER DB, NEED TO SPECFIFY DATABSE ON use
+GO													 
+													 
+EXEC sp_addrolemember N'db_datawriter', gustavo_ad	 
+GO													 
+													 
+EXEC sp_addrolemember db_ddladmin, gustavo_ad		 
+GO													 
+													 
+EXEC sp_addrolemember db_owner, gustavo_ad			 
+GO													 
+
+---------------------------------------------------------------
+---------------------------------------------------------------
+
+USE ParkingSystem
+GO
+
+CREATE USER gustavo_ad FOR LOGIN gustavo_ad
+GO
+
+EXEC sp_addrolemember db_owner, gustavo_ad
+GO
+
+EXEC sp_dropuser gustavo_ad --A LOGIN CANNOT BE THE DATABASE OWNER THATS WHY WE NEED TO DROP IT THEN MAKE IT OWNER
+GO
+
+CREATE DATABASE ParkingSystem ON 
+      (FILENAME = 'C:\ParkingSystem\ParkingSystem.mdf'),
+	  (FILENAME = 'C:\ParkingSystem\ParkingSystem_log.ldf')
+FOR ATTACH
+GO
+
+EXEC sp_changedbowner gustavo_ad
+GO
+--THESE ARE EQUAL I BELIEVE
+ALTER AUTHORIZATION ON DATABASE::ParkingSystem TO gustavo_ad
+GO
+
+
+USE ParkingSystem
+GO
+
+
+EXEC sp_rename 'TB_CLIENTE.APELLIDO', 'APELLIDO PATERNO', 'COLUMN'
+GO
+
+ALTER TABLE TB_CLIENTE ADD [APELLIDO MATERNO] VARCHAR(50)
+GO
+
+ALTER TABLE TB_CLIENTE DROP COLUMN [APELLLIDO MATERNO]
+GO
+
+EXEC sp_rename 'TB_EMPLEADO.APELLIDO', 'APELLIDO PATERNO', 'COLUMN'
+GO
+
+ALTER TABLE TB_EMPLEADO ADD [APELLIDO MATERNO] VARCHAR(50)
+GO
+
+ALTER PROCEDURE [dbo].[usp_ListarClientes]
+AS
+SET NOCOUNT ON
+SELECT ID_CLIENTE,
+       NOMBRE + ' ' + [APELLIDO PATERNO] + ' ' + [APELLIDO MATERNO] AS NOMBRE,
+	   ES_ABONADO = CASE
+            WHEN ABONADO = 1 THEN 'VERDADERO'
+            WHEN ABONADO = 0 THEN 'FALSO'
+          END
+
+FROM TB_CLIENTE
+GO
+
+ALTER PROCEDURE [dbo].[usp_ActualizarCliente]
+@ccod CHAR(6),
+@cnom VARCHAR(50),
+@capep VARCHAR(50),
+@capem VARCHAR(50),
+@cabo BIT
+AS
+UPDATE TB_CLIENTE SET NOMBRE = @cnom, [APELLIDO PATERNO] = @capep, [APELLIDO MATERNO] = @capem,ABONADO = @cabo
+WHERE ID_CLIENTE = @ccod
+GO
+
+ALTER PROCEDURE [dbo].[usp_ConsultarCliente]
+@cod CHAR (6)
+AS
+DECLARE @abo BIT
+SET @abo = (SELECT ABONADO FROM TB_CLIENTE WHERE ID_CLIENTE = @cod)
+IF @abo = 1
+BEGIN
+  SELECT C.ID_CLIENTE,
+       CONCAT(NOMBRE, ' ', [APELLIDO PATERNO], ' ', [APELLIDO MATERNO]) AS [NOMBRE COMPLETO],
+	   ES_ABONADO = CASE
+            WHEN ABONADO = 1 THEN 'VERDADERO'
+            WHEN ABONADO = 0 THEN 'FALSO'
+          END,
+	   ID_ABONADO,
+	   ESTADO_PAGO = CASE
+	       WHEN ESTADO_PAGO = 1 THEN 'AL DIA'
+		   WHEN ESTADO_PAGO = 0 THEN 'EN DEUDA'
+		   END,
+	   EMAIL,
+	   DIRECCION,
+	   TELEFONO,
+	   DNI,
+	   ID_PUESTO
+   
+   FROM TB_CLIENTE C INNER JOIN TB_ABONADO A ON C.ID_CLIENTE = A.ID_CLIENTE WHERE C.ID_CLIENTE = @cod
+END
+ELSE
+   SELECT ID_CLIENTE,
+       CONCAT(NOMBRE, ' ', [APELLIDO PATERNO], ' ', [APELLIDO MATERNO]) AS [NOMBRE COMPLETO],
+	   ES_ABONADO = CASE
+            WHEN ABONADO = 1 THEN 'VERDADERO'
+            WHEN ABONADO = 0 THEN 'FALSO'
+          END
+   FROM TB_CLIENTE WHERE @cod = ID_CLIENTE
+GO
+
+
+update TB_CLIENTE SET [APELLIDO MATERNO] = 'Galvez'
+GO
+
+ALTER PROCEDURE [dbo].[usp_InsertarCliente]
+@cnom VARCHAR(50),
+@capep VARCHAR(50),
+@capem VARCHAR(50),
+@cabo BIT
+AS
+DECLARE @ccod CHAR(6)
+DECLARE @cont INT
+SET @cont = (SELECT COUNT(*) FROM TB_CLIENTE)
+IF @cont = 0
+    SET @ccod = 'CLI001'
+ELSE
+    SET @ccod = (SELECT 'CLI' + RIGHT(MAX(SUBSTRING(ID_CLIENTE, 4, 3) + 1001), 3) 
+	                FROM TB_CLIENTE)
+
+INSERT INTO TB_CLIENTE VALUES (@ccod, @cnom, @capep, @cabo, @capem)
+GO
+
+usp_listarclientesabonado
+go
+
+ALTER PROCEDURE [dbo].[usp_ListarClientesAbonado]
+AS
+SET NOCOUNT ON
+SELECT A.ID_CLIENTE,
+       CONCAT(NOMBRE, ' ', [APELLIDO PATERNO], ' ', [APELLIDO MATERNO]) AS NOMBRE,
+	   ES_ABONADO = CASE
+            WHEN A.ABONADO = 1 THEN 'VERDADERO'
+            WHEN A.ABONADO = 0 THEN 'FALSO'
+          END,
+	   ID_ABONADO,
+   	   ESTADO_PAGO = CASE
+	        WHEN B.ESTADO_PAGO = 1 THEN 'AL DIA'
+			WHEN B.ESTADO_PAGO = 0 THEN 'DEBIENDO'
+		  END,
+	   EMAIL,
+	   DIRECCION,
+	   TELEFONO,
+	   DNI,
+	   C.ID_VEHICULO,
+	   C.PLACA,
+	   ID_PUESTO
+
+FROM TB_CLIENTE A LEFT JOIN TB_ABONADO B ON A.ID_CLIENTE = B.ID_CLIENTE LEFT JOIN TB_VEHICULO C ON A.ID_CLIENTE = C.ID_CLIENTE
+GO
+
+
+ALTER PROCEDURE [dbo].[usp_InsertarClienteAbonado]
+@cnom VARCHAR(50),
+@capep VARCHAR(50),
+@capem VARCHAR(50),
+@cabo BIT,
+@amail VARCHAR(60),
+@adir VARCHAR(60),
+@atel VARCHAR(40),
+@adni CHAR(8),
+@pcod CHAR(6)
+AS
+
+DECLARE @ccod CHAR(6)
+DECLARE @aest BIT = 1
+DECLARE @acod CHAR(6)
+DECLARE @cant SMALLINT
+
+SET @cant = (SELECT COUNT(ID_ABONADO) FROM TB_ABONADO)
+
+IF @cant = 0
+   SET @acod = 'ABO001'
+ELSE
+   SET @acod = (SELECT 'ABO' + RIGHT(MAX(SUBSTRING(ID_ABONADO, 4, 3) + 1001), 3) FROM TB_ABONADO)
+
+
+SET @cant = (SELECT COUNT(ID_CLIENTE) FROM TB_CLIENTE)
+
+IF @cant = 0
+   SET @ccod = 'CLI001'
+ELSE
+   SET @ccod = (SELECT 'CLI' + RIGHT(MAX(SUBSTRING(ID_CLIENTE, 4, 3) + 1001), 3) FROM TB_CLIENTE)
+
+INSERT INTO TB_CLIENTE VALUES(@ccod, @cnom, @capep, @cabo, @capem)
+
+INSERT INTO TB_ABONADO VALUES(@acod, @aest, @amail, @adir, @atel, @adni, @pcod, @ccod)
+
+EXEC usp_ActualizarPuesto @pcod, 0
+
+GO
+
+
+
+
+ALTER PROCEDURE [dbo].[usp_ListarEmpleados]
+AS
+SET NOCOUNT ON
+SELECT ID_EMPLEADO,
+       CONCAT(NOMBRE, ' ', [APELLIDO PATERNO], ' ', [APELLIDO MATERNO]) AS NOMBRE,
+	   TELEFONO,
+	   EMAIL,
+	   DIRECCION,
+	   TURNO = CASE
+	      WHEN TURNO = 1 THEN 'MAÑANA'
+		  WHEN TURNO = 2 THEN 'TARDE'
+		  WHEN TURNO = 3 THEN 'NOCHE'
+       END,
+	   NIVEL,
+	   DNI,
+	   ESTADO = CASE
+	      WHEN ESTADO = 1 THEN 'ACTIVO'
+		  WHEN ESTADO = 0 THEN 'INACTIVO'
+	   END
+FROM TB_EMPLEADO
+GO
+
+UPDATE TB_EMPLEADO SET [APELLIDO MATERNO] = 'Galvez'
+GO
+
+
+ALTER PROCEDURE [dbo].[usp_ActualizarEmpleado]
+@ecod CHAR(6),
+@enom VARCHAR(50),
+@eapep VARCHAR(50),
+@eapem VARCHAR(50),
+@etel VARCHAR(30),
+@email VARCHAR(60),
+@edir VARCHAR(60),
+@etur TINYINT,
+@eniv SMALLINT,
+@edni CHAR(8),
+@eest BIT
+AS
+UPDATE TB_EMPLEADO SET NOMBRE = @enom, [APELLIDO PATERNO] = @eapep,[APELLIDO MATERNO] = @eapem, TELEFONO = @etel, EMAIL = @email, DIRECCION = @edir, TURNO = @etur, NIVEL = @eniv, DNI = @edni, ESTADO = @eest
+WHERE ID_EMPLEADO = @ecod
+GO
+
+ALTER PROCEDURE [dbo].[usp_ConsultarEmpleado]
+@ecod CHAR(6)
+AS
+SELECT ID_EMPLEADO,
+       NOMBRE,
+	   [APELLIDO PATERNO],
+	   [APELLIDO MATERNO],
+	   TELEFONO,
+	   EMAIL,
+	   DIRECCION,
+	   TURNO,
+	   NIVEL,
+	   DNI,
+	   ESTADO
+FROM TB_EMPLEADO WHERE ID_EMPLEADO = @ecod
+GO
+
+USP_LISTAREMPLEADOS
+
+ALTER PROCEDURE [dbo].[usp_InsertarEmpleado]
+@enom VARCHAR(50),
+@eapep VARCHAR(50),
+@eapem VARCHAR(50),
+@etel VARCHAR(30),
+@email VARCHAR(60),
+@edir VARCHAR(60),
+@etur TINYINT,
+@eniv SMALLINT,
+@edni CHAR(8)
+AS
+DECLARE @eest BIT = 1
+DECLARE @cant tinyint
+DECLARE @ecod CHAR(6)
+SET @cant = (SELECT COUNT(ID_EMPLEADO) FROM TB_EMPLEADO) 
+IF @cant = 0
+BEGIN
+   SET @ecod = 'EMP001'
+END
+
+ELSE
+BEGIN
+   SET @ecod = (SELECT 'EMP' + RIGHT(MAX(SUBSTRING(ID_EMPLEADO, 4, 3) + 1001), 3) FROM TB_EMPLEADO)
+END 
+
+INSERT INTO TB_EMPLEADO VALUES(@ecod, @enom, @eapep, @etel, @email, @edir, @etur, @eniv, @edni, @eest, @eapem)
+GO
+
+
+ALTER PROCEDURE [dbo].[usp_ListarVehiculosRegistro]
+AS
+SELECT V.ID_VEHICULO, 
+       MARCA, MODELO, 
+	   PLACA, 
+	   C.ID_CLIENTE, 
+	   NOMBRE + ' ' + [APELLIDO PATERNO] + ' ' + [APELLIDO MATERNO] DUEÑO, 
+	   ES_ABONADO = CASE
+	        WHEN ABONADO = 1 THEN 'VERDADERO'
+	 		WHEN ABONADO = 0 THEN 'FALSO'
+	   
+	   END,
+	   CONVERT(VARCHAR(20), H_ENTRADA, 100) HORA_ENTRADA,
+	   CONVERT(VARCHAR(20), H_SALIDA, 100) HORA_SALIDA,
+	   'S/.' + CONVERT(VARCHAR(20),TARIFA) TARIFA
+	   FROM TB_VEHICULO V INNER JOIN TB_CLIENTE C ON V.ID_CLIENTE = C.ID_CLIENTE INNER JOIN TB_REGISTRO R ON V.ID_VEHICULO = R.ID_VEHICULO 
+GO
+
+
+UPDATE TB_CLIENTE SET [APELLIDO MATERNO] = 'Rodriguez' WHERE ID_CLIENTE = 'CLI001'
+UPDATE TB_CLIENTE SET [APELLIDO MATERNO] = 'Marquez'   WHERE ID_CLIENTE = 'CLI002'
+UPDATE TB_CLIENTE SET [APELLIDO MATERNO] = 'Avellaneda'WHERE ID_CLIENTE = 'CLI003'
+UPDATE TB_CLIENTE SET [APELLIDO MATERNO] = 'Placido'   WHERE ID_CLIENTE = 'CLI004'
+UPDATE TB_CLIENTE SET [APELLIDO MATERNO] = 'Riega'     WHERE ID_CLIENTE = 'CLI005'
+UPDATE TB_CLIENTE SET [APELLIDO MATERNO] = 'Rios'	   WHERE ID_CLIENTE = 'CLI006'
+UPDATE TB_CLIENTE SET [APELLIDO MATERNO] = 'Macedo'	   WHERE ID_CLIENTE = 'CLI007'
+UPDATE TB_CLIENTE SET [APELLIDO MATERNO] = 'Chavez'	   WHERE ID_CLIENTE = 'CLI008'
+UPDATE TB_CLIENTE SET [APELLIDO MATERNO] = 'Prado'	   WHERE ID_CLIENTE = 'CLI009'
+UPDATE TB_CLIENTE SET [APELLIDO MATERNO] = 'Diaz'	   WHERE ID_CLIENTE = 'CLI010'
+UPDATE TB_CLIENTE SET [APELLIDO MATERNO] = 'Meneses'   WHERE ID_CLIENTE = 'CLI011'
+UPDATE TB_CLIENTE SET [APELLIDO MATERNO] = 'Ortega'	   WHERE ID_CLIENTE = 'CLI012'
+UPDATE TB_CLIENTE SET [APELLIDO MATERNO] = 'Mejia'	   WHERE ID_CLIENTE = 'CLI013'
+UPDATE TB_CLIENTE SET [APELLIDO MATERNO] = 'Huaman'	   WHERE ID_CLIENTE = 'CLI014'
+UPDATE TB_CLIENTE SET [APELLIDO MATERNO] = 'Manrique'  WHERE ID_CLIENTE = 'CLI015'
+UPDATE TB_CLIENTE SET [APELLIDO MATERNO] = 'Nolasco'   WHERE ID_CLIENTE = 'CLI018'
+GO
+
+
+
+
+CREATE TABLE TB_MARCA 
+( ID_MARCA CHAR(6) CONSTRAINT PK_MARCA PRIMARY KEY,
+  NOMBRE_MARCA VARCHAR(60),
+  PAIS_MARCA VARCHAR (40)
+)
+GO
+
+CREATE TABLE TB_MODELO
+( ID_MODELO CHAR(6) CONSTRAINT PK_MODELO PRIMARY KEY,
+  NOMBRE_MODELO VARCHAR (60),
+  ID_MARCA CHAR(6) CONSTRAINT FK_MODELO_MARCA FOREIGN KEY REFERENCES TB_MARCA(ID_MARCA)
+)
+GO
+
+usp_consultarcliente CLI001
+
+INSERT INTO TB_CUENTA VALUES ('CUE002', 'rpiñeda', 12345, 'EMP001')
+GO
+
+usp_consultarcuenta 'rpiñeda', 12345
+go
+
+USP_LISTAREMPLEADOS
+
+
+--INSERT INTO TB_MARCA VALUES ('MAR001', '')
+--GO
+
+CREATE PROCEDURE usp_InsertarMarca
+@mnom VARCHAR(60),
+@mpais VARCHAR(50)
+AS
+DECLARE @mcod CHAR(6)
+DECLARE @cant SMALLINT
+SET @cant = (SELECT COUNT(*) FROM TB_MARCA)
+IF @cant = 0
+   SET @mcod = 'MAR001'
+ELSE
+   SET @mcod = (SELECT 'MAR' + RIGHT(MAX(SUBSTRING(ID_MARCA, 4, 3) + 1001), 3) FROM TB_MARCA)
+
+INSERT INTO TB_MARCA VALUES(@mcod, @mnom, @mpais)
+GO
+
+-------------------------------------------------------
+
+CREATE PROCEDURE usp_InsertarModelo
+@monom VARCHAR(60),
+@mcod CHAR(6)
+AS
+
+DECLARE @mocod CHAR(6)
+DECLARE @cant SMALLINT
+SET @cant = (SELECT COUNT(*) FROM TB_MODELO)
+SET @mocod = CASE WHEN @cant = 0 THEN 'MOD001'
+			      WHEN @cant > 0 THEN (SELECT 'MOD' + RIGHT(MAX(SUBSTRING(ID_MODELO, 4, 3) + 1001), 3) FROM TB_MODELO)
+END
+INSERT INTO TB_MODELO VALUES(@mocod, @monom, @mcod)
+GO
+
+
+
+TRUNCATE TABLE TB_MARCA
+GO
+
+DELETE TB_MARCA
+GO
+
+EXEC usp_InsertarMarca 'Alfa Romeo', 'Italia'
+EXEC usp_InsertarMarca 'Audi', 'Alemania'
+EXEC usp_InsertarMarca 'BMW', 'Alemania' 
+EXEC usp_InsertarMarca 'Chery', 'China'
+EXEC usp_InsertarMarca 'Chevrolet', 'USA'
+EXEC usp_InsertarMarca 'Citroen', 'Francia'
+EXEC usp_InsertarMarca 'Ferrari', 'Italia'
+EXEC usp_InsertarMarca 'Fiat', 'Italia'
+EXEC usp_InsertarMarca 'Ford', 'USA'
+EXEC usp_InsertarMarca 'Honda', 'Japon'
+EXEC usp_InsertarMarca 'Hyundai', 'Corea del Sur'
+EXEC usp_InsertarMarca 'Jaguar', 'Gran Bretaña'
+EXEC usp_InsertarMarca 'Jeep', 'USA'
+EXEC usp_InsertarMarca 'KIA', 'Corea del Sur'
+EXEC usp_InsertarMarca 'Lancia', 'Italia'
+EXEC usp_InsertarMarca 'Land Rover', 'Gran Bretaña'
+EXEC usp_InsertarMarca 'Lexus', 'Japon'---
+EXEC usp_InsertarMarca 'Mazda', 'Japon'
+EXEC usp_InsertarMarca 'Mercedes Benz', 'Alemania'
+EXEC usp_InsertarMarca 'Mini', 'Australia'
+EXEC usp_InsertarMarca 'Mitsubishi', 'Japan'
+EXEC usp_InsertarMarca 'Morris Garage', 'Gran Bretaña'
+EXEC usp_InsertarMarca 'Nissan', 'Japon'
+EXEC usp_InsertarMarca 'Opel', 'Alemania'
+EXEC usp_InsertarMarca 'Peugeot', 'Francia'
+EXEC usp_InsertarMarca 'Porsche', 'Alemania'
+EXEC usp_InsertarMarca 'Renault', 'Francia'
+EXEC usp_InsertarMarca 'Seat', 'España'
+EXEC usp_InsertarMarca 'Skoda', 'República Checa'
+EXEC usp_InsertarMarca 'Subaru', 'Japon'
+EXEC usp_InsertarMarca 'Toyota', 'Japon'
+EXEC usp_InsertarMarca 'Volkswagen', 'Alemania'
+EXEC usp_InsertarMarca 'Volvo', 'Suiza'
+
+TRUNCATE TABLE TB_MODELO
+GO
+
+EXEC usp_InsertarModelo 'Giulia', 'MAR001'
+EXEC usp_InsertarModelo 'Stelvio', 'MAR001'
+EXEC usp_InsertarModelo 'Spider', 'MAR001'
+
+EXEC usp_InsertarModelo 'e-tron', 'MAR002'
+EXEC usp_InsertarModelo 'A6', 'MAR002'
+EXEC usp_InsertarModelo 'Q5', 'MAR002'
+
+EXEC usp_InsertarModelo 'M240i Coupé', 'MAR003'
+EXEC usp_InsertarModelo 'M550d xDrive Touring', 'MAR003'
+EXEC usp_InsertarModelo 'Gran Turismo', 'MAR003'
+
+EXEC usp_InsertarModelo 'Arrizo 5', 'MAR004'
+EXEC usp_InsertarModelo 'New Fulwin SD', 'MAR004'
+EXEC usp_InsertarModelo 'Tiggo 3', 'MAR004'
+
+EXEC usp_InsertarModelo 'Sonic', 'MAR005'
+EXEC usp_InsertarModelo 'Cruze', 'MAR005'
+EXEC usp_InsertarModelo 'Impala', 'MAR005'
+
+EXEC usp_InsertarModelo 'C-Elysee', 'MAR006'
+EXEC usp_InsertarModelo 'C5 Crosstourer', 'MAR006'
+EXEC usp_InsertarModelo 'C4 Aircross', 'MAR006'
+
+EXEC usp_InsertarModelo 'GTC4Lusso', 'MAR007'
+EXEC usp_InsertarModelo 'LaFerrari', 'MAR007'
+EXEC usp_InsertarModelo 'F12tdf', 'MAR007'
+
+EXEC usp_InsertarModelo 'Panda Cross', 'MAR008'
+EXEC usp_InsertarModelo '500X City Look', 'MAR008'
+EXEC usp_InsertarModelo '500L Wagon', 'MAR008'
+
+EXEC usp_InsertarModelo 'GT Premium Fastback', 'MAR009'
+EXEC usp_InsertarModelo 'Hybrid Titanium', 'MAR009'
+EXEC usp_InsertarModelo 'King Ranch', 'MAR009'
+
+EXEC usp_InsertarModelo 'Civic Sedan', 'MAR010'
+EXEC usp_InsertarModelo 'Accord Coupe', 'MAR010'
+EXEC usp_InsertarModelo 'Ridgeline', 'MAR010'
+
+EXEC usp_InsertarModelo 'Azera', 'MAR011'
+EXEC usp_InsertarModelo 'Veloster', 'MAR011'
+EXEC usp_InsertarModelo 'Ioniq Electric', 'MAR011'
+
+EXEC usp_InsertarModelo 'F-TYPE', 'MAR012'
+EXEC usp_InsertarModelo 'I-PACE CONCEPT', 'MAR012'
+EXEC usp_InsertarModelo 'XE', 'MAR012'
+
+EXEC usp_InsertarModelo 'Grand Cherokee', 'MAR013'
+EXEC usp_InsertarModelo 'All New Compass', 'MAR013'
+EXEC usp_InsertarModelo 'Renegade', 'MAR013'
+
+EXEC usp_InsertarModelo 'Rio', 'MAR014'
+EXEC usp_InsertarModelo 'Cadenza', 'MAR014'
+EXEC usp_InsertarModelo 'Optima', 'MAR014'
+
+EXEC usp_InsertarModelo 'Delta', 'MAR015'
+EXEC usp_InsertarModelo 'Kappa', 'MAR015'
+EXEC usp_InsertarModelo 'Lambda', 'MAR015'
+
+EXEC usp_InsertarModelo 'Range Rover Evoque', 'MAR016'
+EXEC usp_InsertarModelo 'Land Rover Discovery', 'MAR016'
+EXEC usp_InsertarModelo 'Land Rover Freelander', 'MAR016'
+
+EXEC usp_InsertarModelo 'Range Rover Evoque', 'MAR017'
+EXEC usp_InsertarModelo 'Land Rover Discovery', 'MAR017'
+EXEC usp_InsertarModelo 'Land Rover Freelander', 'MAR017'
+
+
+go
+
+ALTER PROCEDURE [dbo].[usp_IngresarRegistro]
+@rhent DATETIME,
+@rhsal DATETIME,
+@rtarf DECIMAL(6, 2),
+@rdesen VARCHAR(1000),
+@rdesal VARCHAR(1000),
+@ccod CHAR(6),
+@ecod CHAR(6),
+@vcod CHAR(6),
+@pcod CHAR(6)
+AS 
+DECLARE @cant SMALLINT
+DECLARE @rcod CHAR(6)
+SET @cant = (SELECT COUNT(ID_REGISTRO) FROM TB_REGISTRO)
+IF @cant = 0
+   SET @rcod = 'REG001'
+ELSE
+   SET @rcod = (SELECT 'REG' + RIGHT(MAX(SUBSTRING(ID_REGISTRO, 4, 3) + 1001), 3) FROM TB_REGISTRO)
+
+INSERT INTO TB_REGISTRO VALUES(@rcod, @rhent, @rhsal, @rtarf, @rdesen, @rdesal, @ccod, @ecod, @vcod, @pcod)
+GO
+
+
+CREATE PROCEDURE usp_ListarMarcas
+AS
+SELECT ID_MARCA,
+       NOMBRE_MARCA,
+	   PAIS_MARCA
+FROM TB_MARCA
+GO
+
+
+CREATE PROCEDURE usp_ConsultarModelos
+@mcod CHAR(6)
+AS
+SELECT ID_MODELO,
+       NOMBRE_MODELO
+FROM TB_MODELO 
+WHERE ID_MARCA = @mcod
+GO
+
+usp_Consultarmodelos mar003
+
+usp_listarmarcas
+
+usp_consultarcliente cli001
+
+
+ALTER TABLE TB_REGISTRO ADD ESTADO TINYINT
+GO
+
+UPDATE TB_REGISTRO SET ESTADO = 2
+GO
+
+ALTER PROCEDURE [dbo].[usp_ListarRegistros]
+AS
+SELECT ID_REGISTRO,
+       CONVERT(VARCHAR(20), H_ENTRADA, 100) AS HORA_ENTRADA,
+	   CONVERT(VARCHAR(20), H_SALIDA, 100) AS HORA_SALIDA,
+	   TARIFA,
+	   DESCRIPCION_ENTRADA,
+	   DESCRIPCION_SALIDA,
+	   ID_CLIENTE,
+	   ID_EMPLEADO,
+	   ID_VEHICULO,
+	   ID_PUESTO,
+	   [ESTADO AUTO] = CASE 
+	                   WHEN ESTADO = 1 THEN 'EN PLAYA'
+					   WHEN ESTADO = 2 THEN 'FUERA DE PLAYA'
+					   END 
+FROM TB_REGISTRO 
+GO
+
+
+usp_listarregistros
+go
+
+
+--DECLARE @est INT
+--IF @est = 1
+
+
+ALTER PROCEDURE [dbo].[usp_ConsultarCuenta]
+	@cusu VARCHAR(50),
+	@ccon VARCHAR(50)
+AS
+	SELECT ID_CUENTA, USUARIO, CONTRASEÑA, ID_EMPLEADO FROM TB_CUENTA WHERE USUARIO = @cusu AND CONTRASEÑA = @ccon
+GO
+
+
+--GET VEHICLE ID
+ALTER PROCEDURE [dbo].[usp_InsertarVechiculo]
+@vmar VARCHAR(40),
+@vmod VARCHAR(40),
+@vdes VARCHAR(1000),
+@vpla VARCHAR(7),
+@ccod CHAR(6),
+@vtip VARCHAR(30),
+@vcod CHAR(6) OUTPUT
+AS
+DECLARE @cant TINYINT
+SET @cant = (SELECT COUNT(ID_VEHICULO) FROM TB_VEHICULO)
+IF @cant = 0
+BEGIN
+   SELECT @vcod = 'VEH001'
+END
+ELSE
+   SELECT @vcod = (SELECT 'VEH' + RIGHT(MAX(SUBSTRING(ID_VEHICULO, 4, 3) + 1001), 3) FROM TB_VEHICULO)
+
+INSERT INTO TB_VEHICULO VALUES (@vcod, @vmar, @vmod, @vdes, @vpla, @ccod, @vtip)
+GO
+
+sp_helpconstraint tb_vehiculo
+
+--USP_INSERTARVEHICULO 'Alfa Romeo', 'Stelvio', 
+GO 
+
+CREATE PROCEDURE [dbo].[usp_MarcarEntrada]
+@rhent DATETIME,
+@rdesen VARCHAR(1000),
+@ccod CHAR(6),
+@ecod CHAR(6),
+@vcod CHAR(6),
+@pcod CHAR(6)
+AS 
+DECLARE @cant SMALLINT
+DECLARE @rcod CHAR(6)
+SET @cant = (SELECT COUNT(ID_REGISTRO) FROM TB_REGISTRO)
+IF @cant = 0
+   SET @rcod = 'REG001'
+ELSE
+   SET @rcod = (SELECT 'REG' + RIGHT(MAX(SUBSTRING(ID_REGISTRO, 4, 3) + 1001), 3) FROM TB_REGISTRO)
+
+INSERT INTO TB_REGISTRO (ID_REGISTRO, H_ENTRADA, DESCRIPCION_ENTRADA, ID_CLIENTE, ID_EMPLEADO, ID_VEHICULO, ID_PUESTO) 
+VALUES(@rcod, @rhent, @rdesen, @ccod, @ecod, @vcod, @pcod)
+UPDATE TB_PUESTO SET ESTADO_DISPONIBILIDAD = 0 WHERE ID_PUESTO = @pcod
+GO
+
+
+CREATE PROCEDURE [dbo].[usp_MarcarSalida]
+@rcod CHAR(6),
+@rhsal DATETIME,
+@rtarf DECIMAL(6, 2),
+@rdesal VARCHAR(1000),
+@pcod CHAR(6)
+AS
+UPDATE TB_REGISTRO SET H_SALIDA = @rhsal, TARIFA = @rtarf, DESCRIPCION_SALIDA = @rdesal, ESTADO_PLAYA = 2--OUT OF LOT
+UPDATE TB_PUESTO SET ESTADO_DISPONIBILIDAD = 1 WHERE ID_PUESTO = @pcod
+
+GO
+
+----------------------------------------------------------------------------------------------------------------------
+-------18/06----------------------------------------------------------------------------------------------------------
+
+
+----------------------------------------------------------------------------------------------------------------------
+-------20/06----------------------------------------------------------------------------------------------------------
+
+CREATE PROCEDURE usp_ListarEstacionamiento
+AS
+SELECT ID_ESTACIONAMIENTO, PUESTOS, TARIFA_DIARIA FROM TB_ESTACIONAMIENTO
+GO
+
+CREATE TYPE dbo.PUESTOS AS TABLE
+( 
+  ID_PUESTO CHAR(6),
+  NIVEL SMALLINT,
+  BLOQUE VARCHAR(5),
+  ESTADO_DISPONIBILIDAD BIT
+)
+GO
+--ALTER
+CREATE PROCEDURE usp_ActualizarEstacionamiento
+@tpuestos PUESTOS READONLY, --IT MUST BE READONLY OTHERWISE IT RAISES AN ERROR idk
+@etarf DECIMAL (6, 2)
+AS
+IF (SELECT COUNT(*) FROM @tpuestos) > 0 --THIS IS THE CORRECT WAY TO CHECK IF THE TABLE HAS RECORDS OTHERWISE IT WONT RECOGNIZE THE VARIABLE
+    INSERT INTO TB_PUESTOS SELECT ID_PUESTO, NIVEL, BLOQUE, ESTADO_DISPONIBILIDAD FROM @tpuestos --WE FETCH EVERY RECORD FROM THE TABLE VARIABLE THEN INSERT
+UPDATE TB_ESTACIONAMIENTO SET TARIFA_DIARIA = @etarf, PUESTOS = (SELECT COUNT(*) FROM TB_PUESTOS) --WE SET A NEW DAILY COST AND SPOTS QUANTITY
+GO
+
+
+DECLARE @table TABLE (ID_PUESTO CHAR(6), NIVEL SMALLINT, BLOQUE VARCHAR(5), ESTADO_DISPONIBILIDAD BIT)
+DECLARE @tar DECIMAL (6, 2) = 5.4
+
+EXEC usp_ActualizarEstacionamiento @table, @tar
+GO
+
+usp_listarEstacionamiento
+--PRINT @tar 11.50
+
+usp_Listarpuestos
+
+SELECT * FROM TB_PUESTO
+GO
+
+ALTER PROCEDURE [dbo].[usp_ListarPuestos] --PROCEDURES HAVE SCHEMA BINDING BY DEFAULT
+AS
+SELECT ID_PUESTO,
+       NIVEL,
+	   BLOQUE,
+	   DISPONIBILIDAD = CASE --DISPO WAS BAD WRITTEN
+	         WHEN ESTADO_DISPONIBILIDAD = 0 THEN 'OCUPADO'
+			 WHEN ESTADO_DISPONIBILIDAD = 1 THEN 'DISPONIBLE'
+	   END
+FROM TB_PUESTO
+
+
+---------------------------------------------------------------------
+--24/06/17 3:06
+---------------------------------------------------------------------
+
+DROP PROCEDURE usp_ActualizarEstacionamiento
+DROP TYPE PUESTOS
+go
+
+
+CREATE TYPE dbo.PUESTOS AS TABLE
+( 
+  ID_PUESTO CHAR(6),
+  NIVEL INT,  --MISTAKE WAS TYPE NOT MATCHING THE REAL TABLE (used to be SMALLINT)
+  BLOQUE VARCHAR(5),
+  ESTADO_DISPONIBILIDAD BIT
+)
+GO
+
+--CREATE
+ALTER PROCEDURE usp_ActualizarEstacionamiento
+@tpuestos PUESTOS READONLY, --IT MUST BE READONLY OTHERWISE IT RAISES AN ERROR idk
+@etarf DECIMAL (6, 2)
+AS
+IF (SELECT COUNT(*) FROM @tpuestos) > 0 --THIS IS THE CORRECT WAY TO CHECK IF THE TABLE HAS RECORDS OTHERWISE IT WONT RECOGNIZE THE VARIABLE
+    INSERT INTO TB_PUESTO SELECT ID_PUESTO, NIVEL, BLOQUE, ESTADO_DISPONIBILIDAD FROM @tpuestos --WE FETCH EVERY RECORD FROM THE TABLE VARIABLE THEN INSERT
+UPDATE TB_ESTACIONAMIENTO SET TARIFA_DIARIA = @etarf, PUESTOS = (SELECT COUNT(*) FROM TB_PUESTO) --WE SET A NEW DAILY COST AND SPOTS QUANTITY BASED ON THE NEWLY INSERTED SPOTS
+GO --IT IS TB_PUESTO NOT TB_PUESTOS
+
+
+
+--DECLARE @table TABLE (ID_PUESTO CHAR(6), NIVEL INT, BLOQUE VARCHAR(5), ESTADO_DISPONIBILIDAD BIT)
+DECLARE @table PUESTOS
+INSERT INTO @table VALUES('PUE031', 2, 'B', 1) --0 IS OCUPPIED 1 IS AVAILABLE
+DECLARE @tar DECIMAL (6, 2) = 11.5
+EXEC usp_ActualizarEstacionamiento @table, @tar
+GO
+
+UPDATE TB_PUESTO SET ESTADO_DISPONIBILIDAD = 1 WHERE ID_PUESTO = 'PUE032'
+UPDATE TB_PUESTO SET ESTADO_DISPONIBILIDAD = 1 WHERE ID_PUESTO = 'PUE033'
+UPDATE TB_PUESTO SET ESTADO_DISPONIBILIDAD = 1 WHERE ID_PUESTO = 'PUE034'
+
+
+USP_LISTARESTACIONAMIENTO
+
+USP_LISTARPUESTOS
+
+
+
+
+-----------------------
+--´´´´´ 19:21
+-----------------------
+
+ALTER PROCEDURE [dbo].[usp_MarcarSalida]
+@rcod CHAR(6),
+@rhsal DATETIME,
+@rtarf DECIMAL(6, 2),
+@rdesal VARCHAR(1000),
+@pcod CHAR(6)
+AS
+UPDATE TB_REGISTRO SET H_SALIDA = @rhsal, TARIFA = @rtarf, DESCRIPCION_SALIDA = @rdesal
+IF(SELECT TOP 1 ID_PUESTO FROM TB_ABONADO WHERE ID_PUESTO = @pcod) >= 1--WE DETERMINE IF THE SPOT IS RESERVER FOR AN ABONADO
+    RETURN--END PROCEDURE
+ELSE
+    UPDATE TB_PUESTO SET ESTADO_DISPONIBILIDAD = 1 WHERE ID_PUESTO = @pcod
+GO
+
+
+DROP PROCEDURE usp_InsertarVechiculo --NAME BAD WRITTEN I CANNOT BELIEVE IT
+
+CREATE PROCEDURE [dbo].[usp_InsertarVehiculo]
+@vmar VARCHAR(40),
+@vmod VARCHAR(40),
+@vpla VARCHAR(7),
+@ccod CHAR(6),
+@vtip VARCHAR(30),
+@vcod CHAR(6) OUTPUT
+AS
+DECLARE @cant TINYINT
+SET @cant = (SELECT COUNT(ID_VEHICULO) FROM TB_VEHICULO)
+IF @cant = 0
+BEGIN
+   SELECT @vcod = 'VEH001'
+END
+ELSE
+   SELECT @vcod = (SELECT 'VEH' + RIGHT(MAX(SUBSTRING(ID_VEHICULO, 4, 3) + 1001), 3) FROM TB_VEHICULO)
+
+INSERT INTO TB_VEHICULO (ID_VEHICULO, MARCA, MODELO, PLACA, ID_CLIENTE, TIPO)  VALUES (@vcod, @vmar, @vmod, @vpla, @ccod, @vtip)
+
+
+
+----------------------------------------------------------
+-----MIGHT NEED TO UPDATE THIS IT HAS NOT BEEN CHANGED THOU EDIT: WE NEED TO MODIFY IT RIGHT NOW
+ALTER PROCEDURE [dbo].[usp_ListarVehiculosRegistro]
+AS
+SELECT V.ID_VEHICULO, 
+       MARCA, MODELO, 
+	   PLACA, 
+	   --C.ID_CLIENTE, 
+	   R.ID_PUESTO,
+	   NOMBRE + ' ' + [APELLIDO PATERNO] + ' ' + [APELLIDO MATERNO] DUEÑO, 
+	   ES_ABONADO = CASE
+	        WHEN ABONADO = 1 THEN 'VERDADERO'
+	 		WHEN ABONADO = 0 THEN 'FALSO'
+	   
+	   END,
+	   
+	   CONVERT(VARCHAR(20), H_ENTRADA, 100) HORA_ENTRADA,
+	   CONVERT(VARCHAR(20), H_SALIDA, 100) HORA_SALIDA,
+	   'S/.' + CONVERT(VARCHAR(20),TARIFA) TARIFA,
+	   [ESTADO ACTUAL] = CASE 
+	         WHEN R.ESTADO = 1 THEN 'EN PLAYA'
+			 WHEN R.ESTADO = 2 THEN 'FUERA DE PLAYA'--MODIFICATIONS
+	   END
+FROM TB_VEHICULO V INNER JOIN TB_CLIENTE C ON V.ID_CLIENTE = C.ID_CLIENTE INNER JOIN TB_REGISTRO R ON V.ID_VEHICULO = R.ID_VEHICULO 
+GO
+-------------------------------------------
+-------------------------------------------
+
+
+--WE NEED TO SET AN EMPLOYEE ID TO THE SYSTEM ADMINISTRATOR admin ACCOUNT
+--THIS NEEDS TO BE DONE SINCE WE USE THE CURRENT EMPLOYEE ID TO REGISTER ENTRIES
+INSERT INTO TB_EMPLEADO (ID_EMPLEADO, NOMBRE) VALUES('ADM001', 'SYSTEM ADMINISTRATOR')--WE NEED TO ADD IT TO EMPLOYEES TABLE FIRST
+
+UPDATE TB_CUENTA SET ID_EMPLEADO = 'ADM001' WHERE ID_CUENTA = 'CUE001'
+GO
+
+UPDATE TB_REGISTRO SET ESTADO = 2 WHERE ID_REGISTRO = 'REG011'
+UPDATE TB_REGISTRO SET ESTADO = 2 WHERE ID_REGISTRO = 'REG012'
+
+
+-----------------------------------------------------------------------
+--25/06 17:14
+-----------------------------------------------------------------------
+USE ParkingSystem
+GO
+
+ALTER PROCEDURE [dbo].[usp_ListarVehiculosRegistro]
+AS
+SELECT V.ID_VEHICULO,
+       R.ID_REGISTRO, --------------------ADDED 
+       MARCA, MODELO, 
+	   PLACA, 
+	   --C.ID_CLIENTE, 
+	   R.ID_PUESTO,
+	   NOMBRE + ' ' + [APELLIDO PATERNO] + ' ' + [APELLIDO MATERNO] DUEÑO, 
+	   ES_ABONADO = CASE
+	        WHEN ABONADO = 1 THEN 'VERDADERO'
+	 		WHEN ABONADO = 0 THEN 'FALSO'
+	   
+	   END,
+	   
+	   CONVERT(VARCHAR(20), H_ENTRADA, 120) [HORA ENTRADA],--120 INSTEAD OF 100 DIFFERENT DATETIME FORMAT (SHORTER)
+	   CONVERT(VARCHAR(20), H_SALIDA, 120) [HORA SALIDA],
+	   'S/.' + CONVERT(VARCHAR(20),TARIFA) TARIFA,
+	   [ESTADO ACTUAL] = CASE 
+	         WHEN R.ESTADO_PLAYA = 1 THEN 'EN PLAYA'
+			 WHEN R.ESTADO_PLAYA = 2 THEN 'FUERA DE PLAYA'
+	   END
+FROM TB_VEHICULO V INNER JOIN TB_CLIENTE C ON V.ID_CLIENTE = C.ID_CLIENTE INNER JOIN TB_REGISTRO R ON V.ID_VEHICULO = R.ID_VEHICULO 
+GO
+
+
+
+ALTER PROCEDURE [dbo].[usp_ConsultarVehiculo]
+@cod CHAR(6)--CHAR 4 SRLSY????????
+AS
+SELECT ID_VEHICULO,
+       MARCA,--FIRST WAS MODELO THEN MARCA
+	   MODELO,
+	   PLACA,
+	   DESCRIPCION,
+	   ID_CLIENTE
+FROM TB_VEHICULO WHERE @cod = ID_VEHICULO
+GO
+
+usp_consultarvehiculo VEH015
+
+USP_LISTARvEHICULOS
+
+select * from tb_Vehiculo
+GO
+
+--ALTER
+CREATE PROCEDURE usp_ConsultarRegistro --GET ALL DATA
+@rcod CHAR(6)
+AS
+SELECT  ID_REGISTRO, 
+        H_ENTRADA,
+		H_SALIDA,
+		TARIFA,
+		DESCRIPCION_ENTRADA,
+		DESCRIPCION_SALIDA, 
+		ID_CLIENTE, 
+		ID_EMPLEADO, 
+		ID_VEHICULO, 
+		ID_PUESTO,
+		ESTADO_PLAYA
+FROM TB_REGISTRO
+WHERE ID_REGISTRO = @rcod
+GO
+
+
+SP_RENAME 'TB_REGISTRO.ESTADO', ESTADO_PLAYA, 'COLUMN' --RENAME COLUMN THEN RUN THE TWO PROCEDURES ABOVE TO UPDATE THEM (PREVENTS CONFUSION) 
+
+
+
+
+ALTER PROCEDURE [dbo].[usp_MarcarSalida]
+@rcod CHAR(6),
+@rhsal DATETIME,
+@rtarf DECIMAL(6, 2),
+@rdesal VARCHAR(1000),
+@pcod CHAR(6)
+AS
+UPDATE TB_REGISTRO SET H_SALIDA = @rhsal, TARIFA = @rtarf, DESCRIPCION_SALIDA = @rdesal, ESTADO_PLAYA = 2 WHERE ID_REGISTRO = @rcod
+---------------------------------------------YOU FORGOT TO PUT THE CONDITIONAL ON THE UPDATE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+IF(SELECT TOP 1 ID_PUESTO FROM TB_ABONADO WHERE ID_PUESTO = @pcod) >= 1--WE DETERMINE IF THE SPOT IS RESERVED FOR AN ABONADO
+    RETURN--END PROCEDURE
+ELSE
+    UPDATE TB_PUESTO SET ESTADO_DISPONIBILIDAD = 1 WHERE ID_PUESTO = @pcod
+GO
+
+
+ALTER PROCEDURE [dbo].[usp_MarcarEntrada]
+@rhent DATETIME,
+@rdesen VARCHAR(1000),
+@ccod CHAR(6),
+@ecod CHAR(6),
+@vcod CHAR(6),
+@pcod CHAR(6)
+AS 
+DECLARE @cant SMALLINT
+DECLARE @rcod CHAR(6)
+SET @cant = (SELECT COUNT(ID_REGISTRO) FROM TB_REGISTRO)
+IF @cant = 0
+   SET @rcod = 'REG001'
+ELSE
+   SET @rcod = (SELECT 'REG' + RIGHT(MAX(SUBSTRING(ID_REGISTRO, 4, 3) + 1001), 3) FROM TB_REGISTRO)
+
+INSERT INTO TB_REGISTRO (ID_REGISTRO, H_ENTRADA, DESCRIPCION_ENTRADA, ID_CLIENTE, ID_EMPLEADO, ID_VEHICULO, ID_PUESTO, ESTADO_PLAYA) 
+VALUES(@rcod, @rhent, @rdesen, @ccod, @ecod, @vcod, @pcod, 1)
+UPDATE TB_PUESTO SET ESTADO_DISPONIBILIDAD = 0 WHERE ID_PUESTO = @pcod
+GO
+
+
+
+
+
+--------------
+UPDATE TB_PUESTO SET ESTADO_DISPONIBILIDAD = 2 WHERE ID_PUESTO = 'PUE002'--AVAILABLE
+UPDATE TB_PUESTO SET ESTADO_DISPONIBILIDAD = 1 WHERE ID_PUESTO = 'PUE004'
+UPDATE TB_PUESTO SET ESTADO_DISPONIBILIDAD = 1 WHERE ID_PUESTO = 'PUE012'
+UPDATE TB_PUESTO SET ESTADO_DISPONIBILIDAD = 1 WHERE ID_PUESTO = 'PUE013'
+UPDATE TB_PUESTO SET ESTADO_DISPONIBILIDAD = 1 WHERE ID_PUESTO = 'PUE021'
+UPDATE TB_PUESTO SET ESTADO_DISPONIBILIDAD = 1 WHERE ID_PUESTO = 'PUE018'
+UPDATE TB_PUESTO SET ESTADO_DISPONIBILIDAD = 1 WHERE ID_PUESTO = 'PUE003'
+UPDATE TB_PUESTO SET ESTADO_DISPONIBILIDAD = 1 WHERE ID_PUESTO = 'PUE005'
+--------------
+--------------
+UPDATE TB_REGISTRO SET TARIFA = 54.3 WHERE ID_REGISTRO = 'REG001'
+UPDATE TB_REGISTRO SET TARIFA = 23.5 WHERE ID_REGISTRO = 'REG002'
+UPDATE TB_REGISTRO SET TARIFA = 75.3 WHERE ID_REGISTRO = 'REG003'
+UPDATE TB_REGISTRO SET TARIFA = 66.90 WHERE ID_REGISTRO = 'REG004'
+UPDATE TB_REGISTRO SET TARIFA = 32.43 WHERE ID_REGISTRO = 'REG005'
+UPDATE TB_REGISTRO SET TARIFA = 87.21 WHERE ID_REGISTRO = 'REG006'
+UPDATE TB_REGISTRO SET TARIFA = 22.1 WHERE ID_REGISTRO = 'REG007'
+UPDATE TB_REGISTRO SET TARIFA = 65.21 WHERE ID_REGISTRO = 'REG008'
+UPDATE TB_REGISTRO SET TARIFA = 112.25 WHERE ID_REGISTRO = 'REG009'
+UPDATE TB_REGISTRO SET TARIFA = 41.43 WHERE ID_REGISTRO = 'REG010'
+UPDATE TB_REGISTRO SET TARIFA = 76.96 WHERE ID_REGISTRO = 'REG011'
+UPDATE TB_REGISTRO SET TARIFA = 55.64 WHERE ID_REGISTRO = 'REG012'
+UPDATE TB_REGISTRO SET TARIFA = 76.34WHERE ID_REGISTRO = 'REG013'
+UPDATE TB_REGISTRO SET TARIFA = 87.3 WHERE ID_REGISTRO = 'REG014'
+UPDATE TB_REGISTRO SET TARIFA = 14.6 WHERE ID_REGISTRO = 'REG015'
+--------------
+SELECT ID_PUESTO FROM TB_ABONADO
+
+SELECT A.ID_CLIENTE, NOMBRE + ' '+[APELLIDO PATERNO] + ' ' + [APELLIDO MATERNO] 
+FROM TB_ABONADO A INNER JOIN TB_CLIENTE C ON A.ID_CLIENTE = C.ID_CLIENTE;
+GO
+
+
+SELECT * FROM TB_CLIENTE WHERE NOMBRE LIKE '%JUAN%'
+
+
+UPDATE TB_PUESTO SET ESTADO_DISPONIBILIDAD = 1 WHERE ID_PUESTO = 'PUE031'
+UPDATE TB_PUESTO SET ESTADO_DISPONIBILIDAD = 1 WHERE ID_PUESTO = 'PUE032'
+UPDATE TB_PUESTO SET ESTADO_DISPONIBILIDAD = 1 WHERE ID_PUESTO = 'PUE033'
+GO
+
+
+--ALTER TABLE TB_REGISTRO
+--USP_LISTARREGISTROS
+
+ALTER PROCEDURE [dbo].[usp_ListarRegistros]
+AS
+SELECT ID_REGISTRO,
+       CONVERT(VARCHAR(20), H_ENTRADA, 100) AS HORA_ENTRADA,
+	   CONVERT(VARCHAR(20), H_SALIDA, 100) AS HORA_SALIDA,
+	   TARIFA,
+	   DESCRIPCION_ENTRADA,
+	   DESCRIPCION_SALIDA,
+	   ID_CLIENTE,
+	   ID_EMPLEADO,
+	   ID_VEHICULO,
+	   ID_PUESTO,
+	   [ESTADO AUTO] = CASE 
+	                   WHEN ESTADO_PLAYA = 1 THEN 'EN PLAYA'
+					   WHEN ESTADO_PLAYA = 2 THEN 'FUERA DE PLAYA'--REPLACED ESTADO WITH ESTADO_PLAYA
+					   END 
+FROM TB_REGISTRO 
+GO
+
+usp_Listarregistros
+
+
+
+
+
+
+
+
+
+
+
+
+
+

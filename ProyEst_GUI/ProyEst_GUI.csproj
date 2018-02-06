@@ -1,0 +1,352 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{B1AF80C8-FFCD-4488-B442-9FFD5743055C}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>ProyEst_GUI</RootNamespace>
+    <AssemblyName>ProyEst_GUI</AssemblyName>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.ReportViewer.Common, Version=12.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91" />
+    <Reference Include="Microsoft.ReportViewer.WinForms, Version=12.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91, processorArchitecture=MSIL" />
+    <Reference Include="Microsoft.VisualBasic" />
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Web.Services" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Deployment" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Consultas\frmRegistrosCliente.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Consultas\frmRegistrosCliente.Designer.cs">
+      <DependentUpon>frmRegistrosCliente.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Consultas\frmVehiculosIngresados.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Consultas\frmVehiculosIngresados.Designer.cs">
+      <DependentUpon>frmVehiculosIngresados.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Consultas\TotalIngresos.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Consultas\TotalIngresos.Designer.cs">
+      <DependentUpon>TotalIngresos.cs</DependentUpon>
+    </Compile>
+    <Compile Include="DataSet1.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>DataSet1.xsd</DependentUpon>
+    </Compile>
+    <Compile Include="DataSet2.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>DataSet2.xsd</DependentUpon>
+    </Compile>
+    <Compile Include="Empleado\frmActualizarEmpleado.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Empleado\frmActualizarEmpleado.Designer.cs">
+      <DependentUpon>frmActualizarEmpleado.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Empleado\frmNuevoEmpleado.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Empleado\frmNuevoEmpleado.Designer.cs">
+      <DependentUpon>frmNuevoEmpleado.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Estacionamiento\frmEstacionamientoConf.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Estacionamiento\frmEstacionamientoConf.Designer.cs">
+      <DependentUpon>frmEstacionamientoConf.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Estacionamiento\frmNuevaMarca.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Estacionamiento\frmNuevaMarca.Designer.cs">
+      <DependentUpon>frmNuevaMarca.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Estacionamiento\frmNuevoPuesto.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Estacionamiento\frmNuevoPuesto.Designer.cs">
+      <DependentUpon>frmNuevoPuesto.cs</DependentUpon>
+    </Compile>
+    <Compile Include="frmAyuda.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmAyuda.Designer.cs">
+      <DependentUpon>frmAyuda.cs</DependentUpon>
+    </Compile>
+    <Compile Include="frmLogin.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmLogin.Designer.cs">
+      <DependentUpon>frmLogin.cs</DependentUpon>
+    </Compile>
+    <Compile Include="frmNuevaCuenta.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmNuevaCuenta.Designer.cs">
+      <DependentUpon>frmNuevaCuenta.cs</DependentUpon>
+    </Compile>
+    <Compile Include="frmNuevoCliente.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmNuevoCliente.Designer.cs">
+      <DependentUpon>frmNuevoCliente.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Registro\MarcarEntrada.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Registro\MarcarEntrada.Designer.cs">
+      <DependentUpon>MarcarEntrada.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Registro\MarcarSalida.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Registro\MarcarSalida.Designer.cs">
+      <DependentUpon>MarcarSalida.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Reportes\frmReportViewer.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Reportes\frmReportViewer.Designer.cs">
+      <DependentUpon>frmReportViewer.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Vehiculo\frmNuevoVehiculo.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Vehiculo\frmNuevoVehiculo.Designer.cs">
+      <DependentUpon>frmNuevoVehiculo.cs</DependentUpon>
+    </Compile>
+    <Compile Include="frmPrincipal.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmPrincipal.Designer.cs">
+      <DependentUpon>frmPrincipal.cs</DependentUpon>
+    </Compile>
+    <Compile Include="frmActualizarCliente.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmActualizarCliente.Designer.cs">
+      <DependentUpon>frmActualizarCliente.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Vehiculo\frmActualizarVehiculo.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Vehiculo\frmActualizarVehiculo.Designer.cs">
+      <DependentUpon>frmActualizarVehiculo.cs</DependentUpon>
+    </Compile>
+    <EmbeddedResource Include="Consultas\frmRegistrosCliente.resx">
+      <DependentUpon>frmRegistrosCliente.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Consultas\frmVehiculosIngresados.resx">
+      <DependentUpon>frmVehiculosIngresados.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Consultas\TotalIngresos.resx">
+      <DependentUpon>TotalIngresos.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Empleado\frmActualizarEmpleado.resx">
+      <DependentUpon>frmActualizarEmpleado.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Empleado\frmNuevoEmpleado.resx">
+      <DependentUpon>frmNuevoEmpleado.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Estacionamiento\frmEstacionamientoConf.resx">
+      <DependentUpon>frmEstacionamientoConf.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Estacionamiento\frmNuevaMarca.resx">
+      <DependentUpon>frmNuevaMarca.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Estacionamiento\frmNuevoPuesto.resx">
+      <DependentUpon>frmNuevoPuesto.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="frmAyuda.resx">
+      <DependentUpon>frmAyuda.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="frmLogin.resx">
+      <DependentUpon>frmLogin.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="frmNuevaCuenta.resx">
+      <DependentUpon>frmNuevaCuenta.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="frmNuevoCliente.resx">
+      <DependentUpon>frmNuevoCliente.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Registro\MarcarEntrada.resx">
+      <DependentUpon>MarcarEntrada.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Registro\MarcarSalida.resx">
+      <DependentUpon>MarcarSalida.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Reportes\frmReportViewer.resx">
+      <DependentUpon>frmReportViewer.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Reportes\rptRegistrosCliente.rdlc" />
+    <EmbeddedResource Include="Reportes\rptVehiculosIngresados.rdlc" />
+    <EmbeddedResource Include="Vehiculo\frmActualizarVehiculo.resx">
+      <DependentUpon>frmActualizarVehiculo.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Vehiculo\frmNuevoVehiculo.resx">
+      <DependentUpon>frmNuevoVehiculo.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="frmPrincipal.resx">
+      <DependentUpon>frmPrincipal.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="frmActualizarCliente.resx">
+      <DependentUpon>frmActualizarCliente.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <None Include="DataSet1.xsc">
+      <DependentUpon>DataSet1.xsd</DependentUpon>
+    </None>
+    <None Include="DataSet1.xsd">
+      <SubType>Designer</SubType>
+      <Generator>MSDataSetGenerator</Generator>
+      <LastGenOutput>DataSet1.Designer.cs</LastGenOutput>
+    </None>
+    <None Include="DataSet1.xss">
+      <DependentUpon>DataSet1.xsd</DependentUpon>
+    </None>
+    <None Include="DataSet2.xsc">
+      <DependentUpon>DataSet2.xsd</DependentUpon>
+    </None>
+    <None Include="DataSet2.xsd">
+      <SubType>Designer</SubType>
+      <Generator>MSDataSetGenerator</Generator>
+      <LastGenOutput>DataSet2.Designer.cs</LastGenOutput>
+    </None>
+    <None Include="DataSet2.xss">
+      <DependentUpon>DataSet2.xsd</DependentUpon>
+    </None>
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ProyEst_BE\ProyEst_BE.csproj">
+      <Project>{e393e7f9-8744-4f73-a966-456329cf2a6a}</Project>
+      <Name>ProyEst_BE</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ProyEst_BL\ProyEst_BL.csproj">
+      <Project>{dc303529-f507-486c-987a-b00567269a21}</Project>
+      <Name>ProyEst_BL</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\clients.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\employees.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\parking.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\vehicles.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Resources\carlogos\alfa romeo.png" />
+    <Content Include="Resources\carlogos\Audi.png" />
+    <Content Include="Resources\carlogos\BMW.png" />
+    <Content Include="Resources\carlogos\Chery.png" />
+    <Content Include="Resources\carlogos\Chevrolet.png" />
+    <Content Include="Resources\carlogos\Citroen.png" />
+    <Content Include="Resources\carlogos\Ferrari.png" />
+    <Content Include="Resources\carlogos\Fiat.png" />
+    <Content Include="Resources\carlogos\ford.png" />
+    <Content Include="Resources\carlogos\Honda.png" />
+    <Content Include="Resources\carlogos\Hyundai.png" />
+    <Content Include="Resources\carlogos\Jaguar.png" />
+    <Content Include="Resources\carlogos\Jeep.png" />
+    <Content Include="Resources\carlogos\Kia.png" />
+    <Content Include="Resources\carlogos\Lancia.png" />
+    <Content Include="Resources\carlogos\Land Rover.png" />
+    <Content Include="Resources\carlogos\lexus.png" />
+    <Content Include="Resources\carlogos\mazda.png" />
+    <Content Include="Resources\carlogos\mercedes_benz.png" />
+    <Content Include="Resources\carlogos\mini.png" />
+    <Content Include="Resources\carlogos\mitsubishi.png" />
+    <Content Include="Resources\carlogos\Morris Garage.png" />
+    <Content Include="Resources\carlogos\Nissan.png" />
+    <Content Include="Resources\carlogos\opel.png" />
+    <Content Include="Resources\carlogos\peugeot.png" />
+    <Content Include="Resources\carlogos\porsche.png" />
+    <Content Include="Resources\carlogos\renault.png" />
+    <Content Include="Resources\carlogos\seat.png" />
+    <Content Include="Resources\carlogos\skoda.png" />
+    <Content Include="Resources\carlogos\subaru.png" />
+    <Content Include="Resources\carlogos\toyota.png" />
+    <Content Include="Resources\carlogos\volkswagen.png" />
+    <Content Include="Resources\carlogos\volvo.png" />
+    <Content Include="Resources\fondoparking.jpg" />
+    <Content Include="Resources\mylogo.png" />
+    <None Include="Resources\printer-64.png" />
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

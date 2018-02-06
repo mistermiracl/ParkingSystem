@@ -1,0 +1,91 @@
+USE ParkingSystem
+GO
+
+ALTER PROCEDURE [dbo].[usp_ListarPuestos] --PROCEDURES HAVE SCHEMA BINDING BY DEFAULT MEANING TABLES THEY USE CANNOT BE DROPPED SINCE THEY ARE BEGIN USED
+AS
+SELECT ID_PUESTO,
+       NIVEL,
+	   BLOQUE,
+	   DISPONIBILIDAD = CASE --DISPO WAS BAD WRITTEN
+	         WHEN ESTADO_DISPONIBILIDAD = 0 THEN 'OCUPADO'
+			 WHEN ESTADO_DISPONIBILIDAD = 1 THEN 'DISPONIBLE'
+	   END
+FROM TB_PUESTO--PROCEDURE HAD THE COMMENTED LINES IN IT WHAT A SHAME
+-----------------------------------------------------------------------
+----24/06/17 3:06
+-----------------------------------------------------------------------
+
+--DROP PROCEDURE usp_ActualizarEstacionamiento
+--DROP TYPE PUESTOS
+
+
+CREATE PROCEDURE usp_ListarRegistrosCliente
+@ccod CHAR(6),
+@fec_ini DATETIME,
+@fec_fin DATETIME
+AS
+--DECLARE @ccod CHAR(6) = 'CLI001'
+--DECLARE @fec_ini DATETIME = '2017-05-27 00:00:00.000'
+--DECLARE @fec_fin DATETIME = GETDATE()
+SELECT ID_REGISTRO,
+       H_ENTRADA,
+	   H_SALIDA,
+	   TARIFA,
+	   DESCRIPCION_SALIDA,
+	   (SELECT NOMBRE + ' ' + [APELLIDO PATERNO] + ' ' + [APELLIDO MATERNO] FROM TB_CLIENTE C WHERE R.ID_CLIENTE = C.ID_CLIENTE) CLIENTE,
+	   (SELECT MARCA + ' ' + MODELO FROM TB_VEHICULO V WHERE V.ID_VEHICULO = R.ID_VEHICULO) VEHICULO,
+	   ID_PUESTO
+FROM TB_REGISTRO R 
+WHERE ID_CLIENTE = @ccod AND 
+      CONVERT(DATE, H_ENTRADA) >= CONVERT(DATE, @fec_ini) AND
+	  CONVERT(DATE, H_SALIDA) <= CONVERT(DATE, @fec_fin) 
+GO
+
+SELECT * FROM TB_REGISTRO WHERE ID_CLIENTE = 'CLI001'
+GO
+
+
+----------------------------------------------------------
+--FINALE
+----------------------------------------------------------
+ALTER PROCEDURE usp_ConsultarVehiculoPorPlaca
+@vplaca CHAR(7)--PLACA IS 7 BY THE WAY NOT 6 OTHERWISE IT WILL TRUNCATE THE RESULT 
+AS
+SELECT ID_VEHICULO,
+       MARCA,
+	   MODELO,
+	   PLACA,
+	   ID_CLIENTE,
+	   TIPO 
+FROM TB_VEHICULO WHERE PLACA = @vplaca
+GO
+
+select * from tb_vehiculo where placa = 'S12-A24'
+
+usp_consultarvehiculoporplaca 'S12-A24'
+GO
+	
+ALTER PROCEDURE usp_ListarVehiculoPorMarca
+@vmar VARCHAR(100)
+AS
+SELECT ID_VEHICULO,
+       MARCA,
+	   MODELO,
+	   PLACA,
+	   ID_CLIENTE,
+	   TIPO 
+FROM TB_VEHICULO --WHERE MARCA LIKE CONCAT('%', @vmar, '%') --SO THAT WHEN ITS EMPTY IT SHOWS EVERY RECORD
+GO
+
+usp_listarvehiculopormarca 'NISSAN'
+
+
+
+
+
+
+
+
+
+
+
